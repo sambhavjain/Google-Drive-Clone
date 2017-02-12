@@ -5,7 +5,6 @@ const express = require('express'),
 	io 		= require('socket.io')(server),
  	client 	= require("socket.io-client"),
  	ss 		= require("socket.io-stream"),
-
  	fs 		= require('fs'),	
  	path 	= require('path')	,	
  	mkdirp 	= require('mkdirp'),
@@ -14,16 +13,20 @@ const express = require('express'),
 io.on('connection', function(socket){
 	console.log('a user connected')
 	var defaultChannel = 'general'
+	
+	/*Generate Cloud Folder on Server side*/
 	mkdirp('./iCloud', function (err) {
 	    if (err) console.error(err)
 	    else console.log('done')
 	})
+	
 	socket.on('connect', function(data){
 		data.channel = defaultChannel;
 		socket.join(defaultChannel);
 		console.log(data)
 		// io.in(defaultChannel).emit	
 	})
+	
 	let watcher1 = chokidar.watch('./iCloud', {ignored: /[\/\\]\./});
 	
 	let log = console.log.bind(console);
@@ -52,6 +55,12 @@ io.on('connection', function(socket){
 	  	socket.emit('dir-deleted', path)})
 	  .on('error', error => log(`Watcher error: ${error}`))
 
+	/*Socket Listeners on 'add' or 'change' in file*/
+	ss(socket).on('file', function(stream, data) {
+			let path = data.path.split('../').join('./')
+		    stream.pipe(fs.createWriteStream(path));
+	});
+
 	socket.on('dir-added', function(filepath){
 		console.log(filepath + ' directory added')
 		mkdirp(filepath, function (err) {
@@ -60,16 +69,9 @@ io.on('connection', function(socket){
 		})
 		
 	})
-	ss(socket).on('file', function(stream, data) {
-			// console.log(data)
-		    let filename = data.name;
-		    let path = data.path.split('../').join('./')
-		    stream.pipe(fs.createWriteStream(path));
-	});
 	
 	
 	socket.on('file-deleted', function(path){
-		// var filename = path.replace(/^.*[\\\/]/, '')
 		path = path.split('../').join('./')
 		console.log('file to be deleted = '+path)
 		fs.unlink(path,function(err){
@@ -78,6 +80,7 @@ io.on('connection', function(socket){
    		});
 		console.log(path + ' has deleted')
 	})
+	
 	socket.on('dir-deleted', function(path){
 		console.log(path + ' dir to be deleted')
 		path = path.split('../').join('./')
@@ -88,17 +91,19 @@ io.on('connection', function(socket){
 
 })
 app.get('/', function(req, res){
+	
 	var socket = client.connect('http://localhost:3000')
-	// socket.on('connect', 'connected')
+	
+	/*Generate Cloud Folder on Client side*/
 	mkdirp('../iCloud', function (err) {
 	    if (err) console.error(err)
 	    else console.log('done')
 	})
 	//file watcher
-	let watcher2 = chokidar.watch('../iCloud', {ignored: /[\/\\]\./})
-	
+	let watcher2 = chokidar.watch('../iCloud', {ignored: /[\/\\]\./})	
 	let log = console.log.bind(console);
-	// Add event listeners. 
+
+	// Added event listeners. 
 	watcher2
 	  .on('add', function(path){
 	  	// socket.emit('file-added', path)
@@ -126,7 +131,7 @@ app.get('/', function(req, res){
 		socket.emit('dir-deleted', path)})
 	  .on('error', error => log(`Watcher error: ${error}`))
 
-
+	/*Socket Listener on 'add' or 'change' in file*/
 	ss(socket).on('file', function(stream, data) {
 		// console.log(data)
 		var filename = path.basename(data.name);
