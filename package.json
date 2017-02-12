@@ -1,0 +1,33 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "Google Drive Clone",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sambhavjain/Data-Sync.git"
+  },
+  "keywords": [
+    "file",
+    "sharing",
+    "application",
+    "realtime"
+  ],
+  "author": "sambhavjain",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sambhavjain/Data-Sync/issues"
+  },
+  "homepage": "https://github.com/sambhavjain/Data-Sync#readme",
+  "dependencies": {
+    "chokidar": "1.6.1",
+    "express": "4.14.1",
+    "mkdirp": "0.5.1",
+    "socket.io": "1.7.2",
+    "socket.io-client": "1.7.2",
+    "socket.io-stream": "0.9.1"
+  }
+}
