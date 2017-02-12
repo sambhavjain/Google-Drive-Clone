@@ -10,13 +10,16 @@ Setup
 
 1.git clone https://github.com/sambhavjain/Data-Sync.git
 2.Run npm install from project directory
-3.iCloud folder will be created inside Data-Sync folder & outside Data-Sync folder for communication
+3.Run node server.js
+4.Hit http://localhost:3000/ in Postman
+5.iCloud folder will be created inside Data-Sync folder & outside Data-Sync folder for communication
 
 Features
 1.Add a file to iCloud
 2.Edit a file
-3.Add a folder inside iCloud
-4.Delete a file
-5.Delete a folder
+3.Rename a file
+4.Add a folder inside iCloud
+5.Delete a file
+6.Delete a folder
 
 Changes done to any of the iCloud folder will be reflected to other iCLoud folder
