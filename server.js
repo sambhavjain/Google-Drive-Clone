@@ -5,8 +5,7 @@ const express = require('express'),
 	io 		= require('socket.io')(server),
  	client 	= require("socket.io-client"),
  	ss 		= require("socket.io-stream"),
- 	// stream = ss.createStream(),
- 	// stream1 = ss.createStream(),
+
  	fs 		= require('fs'),	
  	path 	= require('path')	,	
  	mkdirp 	= require('mkdirp'),
@@ -15,7 +14,7 @@ const express = require('express'),
 io.on('connection', function(socket){
 	console.log('a user connected')
 	var defaultChannel = 'general'
-	// socket.emit('you are connected with id '+socket.id);
+	
 	socket.on('connect', function(data){
 		data.channel = defaultChannel;
 		socket.join(defaultChannel);
@@ -23,9 +22,7 @@ io.on('connection', function(socket){
 		// io.in(defaultChannel).emit
 	})
 	let watcher1 = chokidar.watch('./iCloud', {ignored: /[\/\\]\./});
-	// .on('all', (event, path) => {
-	//   // socket.emit('') 
-	// });
+	
 	let log = console.log.bind(console);
 	// Add event listeners. 
 	watcher1
@@ -33,14 +30,14 @@ io.on('connection', function(socket){
 	  	socket.emit('file-added', path)
 	  	let stream = ss.createStream()
 	  	var filename = path.replace(/^.*[\\\/]/, '')
-		ss(socket).emit('server-file', stream, {name: filename});
+		ss(socket).emit('file', stream, {name: filename});
 		fs.createReadStream(path).pipe(stream);
 	  })
 	  .on('change', function(path){
-	  	socket.emit('file-change', path)
+	  	// socket.emit('file-change', path)
 	  	let stream = ss.createStream()
 	  	var filename = path.replace(/^.*[\\\/]/, '')
-	  	ss(socket).emit('changed-file', stream, {name: filename});
+	  	ss(socket).emit('file', stream, {name: filename});
 		fs.createReadStream(path).pipe(stream);
 	  })
 	  .on('unlink', function(path){
@@ -60,39 +57,30 @@ io.on('connection', function(socket){
 		})
 		
 	})
-	ss(socket).on('client-file', function(stream, data) {
-			console.log(data)
-		    var filename = path.basename(data.name);
+	ss(socket).on('file', function(stream, data) {
+			// console.log(data)
+		    let filename = path.basename(data.name);
 		    stream.pipe(fs.createWriteStream('./iCloud/'+filename));
 	});
-	// socket.on('file-added', function(filepath){
-	// 	console.log(filepath + ' file added to server')
-	// 	ss(socket).on('client-file', function(stream, data) {
+	// ss(socket).on('changed-file', function(stream, data) {
 	// 		console.log(data)
-	// 	    var filename = path.basename(data.name);
+	// 	    let filename = path.basename(data.name);
 	// 	    stream.pipe(fs.createWriteStream('./iCloud/'+filename));
 	// 	});
-	// })
-	// socket.on('file-change', function(filepath){
-	// 	console.log(filepath + ' has changed')
-	// 	ss(socket).on('edited-file', function(stream, data) {
-	// 		console.log(data)
-	// 	    var filename = path.basename(data.name);
-	// 	    stream.pipe(fs.createWriteStream('./iCloud/'+filename));
-	// 	});
-	// })
+	
 	socket.on('file-deleted', function(path){
-		var filename = path.replace(/^.*[\\\/]/, '')
-		console.log('file to be deleted = '+filename)
-		fs.unlink('./iCloud/'+filename,function(err){
+		// var filename = path.replace(/^.*[\\\/]/, '')
+		path = path.split('../').join('./')
+		console.log('file to be deleted = '+path)
+		fs.unlink(path,function(err){
 	        if(err) return console.log(err);
 	        else console.log('file deleted successfully');       
    		});
 		console.log(path + ' has deleted')
 	})
-	socket.on('dir-deleted', function(path){
-		console.log(path + ' dir deleted')
-	})
+	// socket.on('dir-deleted', function(path){
+	// 	console.log(path + ' dir deleted')
+	// })
 
 })
 app.get('/', function(req, res){
@@ -104,11 +92,6 @@ app.get('/', function(req, res){
 	})
 	//file watcher
 	let watcher2 = chokidar.watch('../iCloud', {ignored: /[\/\\]\./})
-	// .on(['add', 'change'], function(path){
-	// 	var filename = path.replace(/^.*[\\\/]/, '')
-	// 	ss(socket).emit('file', stream, {name: filename});
-	// 	fs.createReadStream(path).pipe(stream);
-	// });
 	
 	let log = console.log.bind(console);
 	// Add event listeners. 
@@ -117,7 +100,7 @@ app.get('/', function(req, res){
 	  	// socket.emit('file-added', path)
 	  	let stream = ss.createStream();
 	  	var filename = path.replace(/^.*[\\\/]/, '')
-		ss(socket).emit('client-file', stream, {name: filename});
+		ss(socket).emit('file', stream, {name: filename});
 		fs.createReadStream(path).pipe(stream);
 	  })
 	  .on('change', function(path){
@@ -125,9 +108,10 @@ app.get('/', function(req, res){
 	  	let stream = ss.createStream();
 	  	var filename = path.replace(/^.*[\\\/]/, '')
 
-	  	ss(socket).emit('edited-file', stream, {name: filename});
+	  	ss(socket).emit('file', stream, {name: filename});
 		fs.createReadStream(path).pipe(stream);
 	  })
+	  
 	  .on('unlink', function(path){
 	  	socket.emit('file-deleted', path)})
 	  .on('addDir', function(path){
@@ -146,22 +130,27 @@ app.get('/', function(req, res){
 		})
 		
 	})
-	socket.on('file-added', function(filepath){
-		console.log(filepath + ' server file added to client')
-		ss(socket).on('server-file', function(stream1, data) {
-			console.log(data)
-		    var filename = path.basename(data.name);
-		    stream1.pipe(fs.createWriteStream('../iCloud/'+filename));
-		});
-	})
-	socket.on('file-change', function(filepath){
-		console.log(filepath + ' has changed')
-		ss(socket).on('changed-file', function(stream, data) {
-			console.log(data)
+	// socket.on('file-added', function(filepath){
+	// 	console.log(filepath + ' server file added to client')
+	// 	ss(socket).on('server-file', function(stream1, data) {
+	// 		console.log(data)
+	// 	    var filename = path.basename(data.name);
+	// 	    stream1.pipe(fs.createWriteStream('../iCloud/'+filename));
+	// 	});
+	// })
+	ss(socket).on('file', function(stream, data) {
+			// console.log(data)
 		    var filename = path.basename(data.name);
 		    stream.pipe(fs.createWriteStream('../iCloud/' + filename));
 		});
-	})
+	// socket.on('file-change', function(filepath){
+	// 	console.log(filepath + ' has changed')
+	// 	ss(socket).on('changed-file', function(stream, data) {
+	// 		console.log(data)
+	// 	    var filename = path.basename(data.name);
+	// 	    stream.pipe(fs.createWriteStream('../iCloud/' + filename));
+	// 	});
+	// })
 	socket.on('file-deleted', function(path){
 		fs.unlink('../'+path,function(err){
 	        if(err) return console.log(err);
